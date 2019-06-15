@@ -7,13 +7,13 @@
 /** Run the test 4 times, and each time change the _TEST_NUMBER definition.
  * _TEST_NUMBER should be: 1 or 2 or 3 or 4.
  */
-#define _TEST_NUMBER 0
+#define _TEST_NUMBER 1
 
 
 #if (1 == _TEST_NUMBER)
 #include "malloc_2.cpp"
-#else
-#include "malloc_3.cpp"
+// #else
+// #include "malloc_3.cpp"
 #endif
 
 void malloc2_test_01() {
@@ -38,7 +38,7 @@ void malloc2_test_01() {
     }
 
     // calloc
-    int *three = (int *) calloc(sizeof(int) * 3);
+    int *three = (int *) calloc(3, sizeof(int));
     assert(three);
     for (int i = 0; i < 3; i++) {
         assert(three[i] == 0);
@@ -114,7 +114,7 @@ void malloc3_test_01() {
     }
 
     // calloc
-    int *three = (int *) calloc(sizeof(int) * 3);
+    int *three = (int *) calloc(3, sizeof(int));
     assert(three);
     for (int i = 0; i < 3; i++) {
         assert(three[i] == 0);
@@ -298,14 +298,15 @@ void malloc3_test_03() {
 }
 
 int main() {
-    printf("Hi there\n");
+    printf("Hi there!\n");
+
     //printf("%l",(long)sizeof(allocated_meta_data));
 
     assert(_num_free_blocks() == 0);
     assert(_num_free_bytes() == 0);
-    assert(_num_allocated_blocks() == 0);
-    assert(_num_allocated_bytes() == 0);
     assert(_num_meta_data_bytes() == 0);
+    assert(_num_allocated_bytes() == 0);
+    assert(_num_allocated_blocks() == 0);
 
     /// run the tests each one separately because list uses global vars
     /// that means the test needs to run 4 times with different _TEST_NUMBER
@@ -325,7 +326,7 @@ int main() {
             break;
         default:
             printf("Invalid definition of macro \"_TEST_NUMBER\",\nshould be: 1/2/3/4.");
-            return 0;
+            return 1;
     }
 
     printf("Success for test: %d.\n", _TEST_NUMBER);
