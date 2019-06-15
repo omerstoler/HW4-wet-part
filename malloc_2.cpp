@@ -70,7 +70,7 @@ void* malloc(size_t size)
   LogEntry log_entry(size,size,false,prog_brk+sizeof(LogEntry)); // Pointers arithmetic
   std::memcpy(temp_entry, &log_entry, sizeof(LogEntry));
   temp_entry->set_next(log);
-  log = temp_entry;
+  log = temp_entry; // NOTE: The pointer is to the top entry, not the memory head
 
   return temp_entry->get_mem_pointer();
 }
@@ -80,10 +80,7 @@ void* calloc(size_t size)
   void* new_mem = malloc(size);
   if(new_mem==NULL)
     return NULL;
-  for (size_t i = 0; i < size; i++)
-  {
-    std::memset(new_mem, 0, size);
-  }
+  std::memset(new_mem, 0, size);
   return new_mem;
 }
 
@@ -91,9 +88,9 @@ void* calloc(size_t size)
 void* realloc(void* oldp, size_t size)
 {
   LogEntry* iter = log;
-  void* mall_mem;
+  void* malloc_mem;
   size_t old_size=0;
-
+  // find old memory and free it. so later can use it for the new mem size.
   if(oldp!=NULL)
   {
     while (iter != NULL)
@@ -103,22 +100,32 @@ void* realloc(void* oldp, size_t size)
         iter->set_free(true);
         break;
       }
-      iter = iter->next;
+      else
+        iter = iter->next;
     }
-    old_size = iter->get_data_size();
+    old_size = iter->get_data_size(); // old_size = size in iter which did "break"
   }
 
-  mall_mem = malloc(size);
+  malloc_mem = malloc(size); // NOTE: toggles the is_free and updates data_size
 
+  if(malloc_mem == NULL)
+  {
+    if(oldp!=NULL)
+    {
+      iter->set_free(false);
+    }
+    return NULL;
+  }
+  // copy mem
   if(oldp!=NULL)
   {
-    if(mall_mem != iter->get_mem_pointer())
+    if(malloc_mem != iter->get_mem_pointer())
     {
-      std::memcpy(mall_mem,oldp,old_size);
+      std::memcpy(malloc_mem,oldp,old_size);
     }
   }
 
-  return mall_mem;
+  return malloc_mem;
 }
 
 // TODO: check if needed logic to determine if to fold back brk() or not

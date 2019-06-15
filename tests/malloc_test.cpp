@@ -38,7 +38,7 @@ void malloc2_test_01() {
     }
 
     // calloc
-    int *three = (int *) calloc(3, sizeof(int));
+    int *three = (int *) calloc(sizeof(int) * 3);
     assert(three);
     for (int i = 0; i < 3; i++) {
         assert(three[i] == 0);
@@ -114,7 +114,7 @@ void malloc3_test_01() {
     }
 
     // calloc
-    int *three = (int *) calloc(3, sizeof(int));
+    int *three = (int *) calloc(sizeof(int) * 3);
     assert(three);
     for (int i = 0; i < 3; i++) {
         assert(three[i] == 0);
@@ -298,7 +298,7 @@ void malloc3_test_03() {
 }
 
 int main() {
-    printf("Hi there!\n");
+    printf("Hi there\n");
     //printf("%l",(long)sizeof(allocated_meta_data));
 
     assert(_num_free_blocks() == 0);
@@ -325,7 +325,7 @@ int main() {
             break;
         default:
             printf("Invalid definition of macro \"_TEST_NUMBER\",\nshould be: 1/2/3/4.");
-            return 1;
+            return 0;
     }
 
     printf("Success for test: %d.\n", _TEST_NUMBER);
