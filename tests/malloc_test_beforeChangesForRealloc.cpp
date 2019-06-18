@@ -60,9 +60,10 @@ void malloc2_test_01() {
     assert(ninety);
     assert(_num_free_blocks() == 1);
     assert(_num_free_bytes() == sizeof(int) * 10);
-    assert(_num_allocated_blocks() == 4+1); //==assert(_num_allocated_blocks() == 4+1);                                          //Question: rm 1 block and put other instead. should stay 4?
-    assert(_num_allocated_bytes() == sizeof(int) * 108+116);//===assert(_num_allocated_bytes() == sizeof(int) * 108+116);
-    assert(_num_meta_data_bytes() == _size_meta_data() * (4+1));//===assert(_num_meta_data_bytes() == _size_meta_data() * (4+1));
+    printf("nablocks = %d\n , nabytes = %d\n , nmdbytes = %d\n",_num_allocated_blocks(),_num_allocated_bytes(),_num_meta_data_bytes());
+    assert(_num_allocated_blocks() == 4+1);
+    assert(_num_allocated_bytes() == sizeof(int) * 108+116);
+    assert(_num_meta_data_bytes() == _size_meta_data() * (4+1));
 
     int *sixty = (int *) realloc(NULL, sizeof(int) * 60);
     assert(sixty);

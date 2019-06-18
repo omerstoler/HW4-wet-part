@@ -6,7 +6,7 @@
 
 
 void* malloc(size_t size);
-void* calloc(size_t size);
+void* calloc(size_t num, size_t size);
 void* realloc(void* oldp, size_t size);
 void free(void* p);
 size_t _num_free_blocks();
@@ -19,8 +19,7 @@ size_t _size_meta_data();
 class LogEntry
 {
 public:
-    static LogEntry* log = NULL;
-    LogEntry(size_t size,size_t data_size, bool is_free, void* mem_pointer)
+      LogEntry(size_t size,size_t data_size, bool is_free, void* mem_pointer)
     {
       m_size = size;
       m_data_size = data_size;
@@ -45,7 +44,7 @@ private:
     void* m_mem_pointer;
 };
 //======== Log of memory entries =======
-// LogEntry* log = NULL;
+ LogEntry* log = NULL;
 
 void* malloc(size_t size)
 {
@@ -61,7 +60,7 @@ void* malloc(size_t size)
     return NULL;
   }
 
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   LogEntry* temp_entry;
   while (iter != NULL)
   {
@@ -83,16 +82,16 @@ void* malloc(size_t size)
   temp_entry = (LogEntry*)prog_brk;
   LogEntry log_entry(size,size,false,temp_entry + 1); // Pointers arithmetic : temp_entry/prog_brk + sizeof(LogEntry)
   std::memcpy(temp_entry, &log_entry, sizeof(LogEntry));
-  temp_entry->set_next(LogEntry::log);
-  LogEntry::log = temp_entry; // NOTE: The pointer is to the top entry, not the memory head
+  temp_entry->set_next(log);
+  log = temp_entry; // NOTE: The pointer is to the top entry, not the memory head
 
 
   return temp_entry->get_mem_pointer();
 }
 
-void* calloc(size_t size)
+void* calloc(size_t num, size_t size)
 {
-  void* new_mem = malloc(size);
+  void* new_mem = malloc(num * size);
   if(new_mem==NULL)
     return NULL;
   std::memset(new_mem, 0, size);
@@ -102,7 +101,7 @@ void* calloc(size_t size)
 // TODO: Check if needs to prevent allocations at any price
 void* realloc(void* oldp, size_t size)
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   void* malloc_mem;
   size_t old_size=0;
   // find old memory and free it. so later can use it for the new mem size.
@@ -122,6 +121,7 @@ void* realloc(void* oldp, size_t size)
   }
 
   malloc_mem = malloc(size); // NOTE: toggles the is_free and updates data_size
+  assert(malloc_mem != NULL);
 
   if(malloc_mem == NULL)
   {
@@ -146,7 +146,7 @@ void* realloc(void* oldp, size_t size)
 // TODO: check if needed logic to determine if to fold back brk() or not
 void free(void* p)
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
 
   while (iter != NULL)
   {
@@ -160,7 +160,7 @@ void free(void* p)
 
 size_t _num_free_blocks()
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   size_t cnt = 0;
   while (iter != NULL)
   {
@@ -175,7 +175,7 @@ size_t _num_free_blocks()
 
 size_t _num_free_bytes()
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   size_t sum=0;
   while (iter != NULL)
   {
@@ -188,12 +188,11 @@ size_t _num_free_bytes()
 
 size_t _num_allocated_blocks()
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   size_t count=0;
   while (iter != NULL)
   {
-    if(!(iter->is_free()))
-      count++;
+    count++;
     iter = iter->get_next();
   }
   return count;
@@ -202,12 +201,11 @@ size_t _num_allocated_blocks()
 size_t _num_allocated_bytes()
 {
 
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   size_t sum=0;
   while (iter != NULL)
   {
-    if(!iter->is_free())
-      sum+=iter->get_size();
+    sum+=iter->get_size();
     iter = iter->get_next();
   }
   return sum;
@@ -215,7 +213,7 @@ size_t _num_allocated_bytes()
 
 size_t _num_meta_data_bytes()
 {
-  LogEntry* iter = LogEntry::log;
+  LogEntry* iter = log;
   size_t count=0;
   while (iter != NULL)
   {
