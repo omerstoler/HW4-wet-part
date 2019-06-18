@@ -116,53 +116,39 @@ void remalloc_3_test() {
     assert(!third_ptr);
     assert(second_ptr);
     TEST_MALLOC();
-    printf("1\n");
+
     //Check everything still makes sense
     free(second_ptr);
     valid_free_blocks++;
     valid_free_bytes+=8;
     TEST_MALLOC();
-    printf("2\n");
 
 
     /*******************************************
     This part onwards differs from malloc_2:
     ********************************************/
-    printf("1.25\n");
 
     //Test realloc for a large block
     int* large_malloc = (int*)malloc(40*sizeof(int));   //Increases wilderness
-    printf("1.27\n");
     assert(large_malloc);
     for (int i = 0; i < 40; i++) {
         large_malloc[i] = i;
     }
-    printf("1.3\n");
-
     valid_free_blocks--;
     valid_free_bytes-=8;
-    printf("1.5\n");
     valid_allocated_bytes += (40*sizeof(int)-8);
-    printf("1.75\n");
     TEST_MALLOC();
-    printf("2\n");
-    printf("2\n");
+    
     //Should increase the wilderness further
     int* old_large_malloc = large_malloc;
-    printf("2.25\n");
     large_malloc = (int*)realloc(large_malloc, 100*sizeof(int));
-    printf("2.5\n");
     assert(large_malloc);
     assert (large_malloc == old_large_malloc);
     for (int i = 0; i < 40; i++) {
         assert(large_malloc[i] == i);
     }
-    printf("2.75\n");
     valid_allocated_bytes = 100*sizeof(int);
-    printf("2.875\n");
-
     TEST_MALLOC();
-    printf("3\n");
 
     //Check that failure for large block realloc dosen't make any changes (Without uniting any blocks)
     int* failed_realloc = (int*)realloc(large_malloc, 0);
@@ -172,8 +158,7 @@ void remalloc_3_test() {
         assert(large_malloc[i] == i);
     }
     TEST_MALLOC();
-    printf("4\n");
-
+    
     //Should split the block
     large_malloc = (int*)realloc(large_malloc, 60*sizeof(int));
     assert(large_malloc);

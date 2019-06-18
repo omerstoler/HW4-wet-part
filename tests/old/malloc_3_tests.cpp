@@ -1,17 +1,6 @@
 
+#define META_SIZE         sizeof(Meta_Data) // put your meta data name here.
 
-typedef struct memory_meta_data2{
-    size_t total_size;
-    bool is_free;
-    memory_meta_data * prev;
-    memory_meta_data * next;
-} NODE2;
-#define META_SIZE   sizeof(NODE2) // put your meta data name here.
-#include "malloc_3.cpp"
-#include <cstdio>
-#include <cstdlib>
-#include <cassert>
-#define MAX_MALLOC_SIZE  (100000000) //10^8
 int main() {
 
  //   global_list_init = NULL; init of global list.
