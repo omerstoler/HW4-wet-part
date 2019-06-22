@@ -19,6 +19,7 @@ size_t _size_meta_data();
 size_t potential_merge_mem(LogEntry* curr);
 void merge_adj_log_entries(LogEntry* curr);
 size_t align_mem(size_t size);
+LogEntry* get_heap_head();
 
 class LogEntry
 {
@@ -67,7 +68,7 @@ void* malloc(size_t size)
   {
     return NULL;
   }
-  LogEntry* iter = log;
+  LogEntry* iter = get_heap_head();
   LogEntry* temp_entry;
   size_t aligned_size;
   void *iter_void ;
@@ -80,9 +81,9 @@ void* malloc(size_t size)
     {
       merge_adj_log_entries(iter);
     }
-    iter = iter->get_next();
+    iter = iter->get_prev();
   }
-  iter = log;
+  iter = get_heap_head();
 
   while (iter != NULL)
   {
@@ -116,7 +117,7 @@ void* malloc(size_t size)
       iter->set_data_size(size);
       return iter->get_mem_pointer();
     }
-    iter = iter->get_next();
+    iter = iter->get_prev();
   }
 
   //==== Problem 3 ====
@@ -168,7 +169,7 @@ void* calloc(size_t num, size_t size)
 // TODO: Check if needs to prevent allocations at any price
 void* realloc(void* oldp, size_t size)
 {
-  LogEntry* iter = log;
+  LogEntry* iter = get_heap_head();
   void* malloc_mem;
   size_t old_size=0;
   // find old memory and free it. so later can use it for the new mem size.
@@ -182,7 +183,7 @@ void* realloc(void* oldp, size_t size)
         break;
       }
       else
-        iter = iter->get_next();
+        iter = iter->get_prev();
     }
     old_size = iter->get_data_size(); // old_size = size in iter which did "break"
   }
@@ -235,23 +236,10 @@ void merge_adj_log_entries(LogEntry* curr)
   {
     return;
   }
-  if(prev != NULL && prev->is_free())
-  {
-    // union of 2 - curr and prev - removing prev
-    // unlink prev meta-data
-    curr->set_prev(prev->get_prev());
-    if(prev->get_prev()!=NULL)
-    {
-      prev->get_prev()->set_next(curr);
-    }
-    // update curr's fields
-    curr->set_size(curr->get_size()+prev->get_size()+sizeof(LogEntry));
-  }
   if(next != NULL && next->is_free())
   {
     // union of 2 - curr and next - removing curr
     // unlink curr meta-data
-    prev = curr->get_prev();
     next->set_prev(prev);
     if(prev!=NULL)
     {
@@ -263,12 +251,31 @@ void merge_adj_log_entries(LogEntry* curr)
     }
     // update next's fields
     next->set_size(next->get_size()+curr->get_size()+sizeof(LogEntry));
+    curr = next;
+  }
+
+  if(prev != NULL && prev->is_free())
+  {
+    // union of 2 - curr and prev - removing prev
+    // unlink prev meta-data
+
+    curr->set_prev(prev->get_prev());
+    if(prev->get_prev()!=NULL)
+    {
+      prev->get_prev()->set_next(curr);
+    }
+    else
+    {
+      log=curr;
+    }
+    // update curr's fields
+    curr->set_size(curr->get_size()+prev->get_size()+sizeof(LogEntry));
   }
 }
 // TODO: check if needed logic to determine if to fold back brk() or not
 void free(void* p)
 {
-  LogEntry* iter = log;
+  LogEntry* iter = get_heap_head();
   while (iter != NULL)
   {
     // Part3 - problem 2:
@@ -278,7 +285,7 @@ void free(void* p)
       merge_adj_log_entries(iter);
       break;
     }
-    iter = iter->get_next();
+    iter = iter->get_prev();
   }
 }
 
@@ -357,4 +364,19 @@ size_t align_mem(size_t size)
   if (size%4 == 0)
     return size;
   return (size)+4-(size)%4;
+}
+
+LogEntry* get_heap_head()
+{
+  LogEntry* iter = log;
+  if(log==NULL)
+  {
+    return NULL;
+  }
+  while(iter!=NULL)
+  {
+    if(iter->get_next()==NULL)
+      return iter;
+    iter = iter->get_next();
+  }
 }

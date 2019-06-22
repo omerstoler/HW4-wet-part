@@ -8,7 +8,7 @@
 /** Run the test 4 times, and each time change the _TEST_NUMBER definition.
  * _TEST_NUMBER should be: 1 or 2 or 3 or 4.
  */
-#define _TEST_NUMBER 4
+#define _TEST_NUMBER 5
 
 
 #if (1 == _TEST_NUMBER)
@@ -181,8 +181,8 @@ void malloc3_test_01() {
 
     int *old_ten = ten;
     ten = (int *) malloc(sizeof(int) * 10);
-    /*
-    =========== TODO: Check for order of insertion to memory =========
+
+    //=========== TODO: Check for order of insertion to memory =========
     assert(ten == old_ten);
     assert(_num_free_blocks() == 1);
     //assert(_num_free_bytes() == sizeof(int) * 79 - _size_meta_data());
@@ -191,7 +191,7 @@ void malloc3_test_01() {
     assert(_num_meta_data_bytes() == _size_meta_data() * (6+1));
     // order so far: ten, five, three, eleven, freed(79-data_size), sixty
     printf("realloc old_ten\n");
-    */
+
 }
 
 void malloc3_test_02() {
@@ -227,6 +227,7 @@ void malloc3_test_02() {
 
     for (int i = 1; i < 11; i++) {
         if (i != 5 && i != 8) free(tens[i]);
+        /*printf("freed: %d\n", _num_free_blocks());*/
     }
     // order: free(280+6*data), 80, free(190+data)
     assert(_num_free_blocks() == 2);
@@ -238,6 +239,7 @@ void malloc3_test_02() {
     assert(_num_meta_data_bytes() == _size_meta_data() * (3+1));
 
     free(tens[8]);
+    /*printf("freed: %d - not as wanted = 1..\n", _num_free_blocks());*/
     assert(_num_free_blocks() == 1);
     assert(_num_free_bytes() ==
            sizeof(long long) * 550 + 9 * _size_meta_data());
@@ -245,7 +247,6 @@ void malloc3_test_02() {
     assert(_num_allocated_bytes() ==
            sizeof(long long) * 550 + 9 * _size_meta_data()+116);
     assert(_num_meta_data_bytes() == _size_meta_data() * (1+1));
-
 }
 
 void malloc3_test_03() {
@@ -319,6 +320,81 @@ void malloc3_test_03() {
     assert(_num_meta_data_bytes() == _size_meta_data() * (2+1));
 }
 
+// OURS
+void malloc3_test_04()
+{
+  // malloc
+  int *ten = (int *) malloc(sizeof(int) * 10);
+  assert(ten);
+  for (int i = 0; i < 10; i++) {
+      ten[i] = 10;
+  }
+  int *five = (int *) malloc(sizeof(int) * 5);
+  assert(five);
+  for (int i = 0; i < 5; i++) {
+      five[i] = 5;
+  }
+
+  for (int i = 0; i < 10; i++) {
+      assert(ten[i] == 10);
+  }
+  for (int i = 0; i < 5; i++) {
+      assert(five[i] == 5);
+  }
+
+  // calloc
+  int *three = (int *) calloc(3, sizeof(int));
+  assert(three);
+  for (int i = 0; i < 3; i++) {
+      assert(three[i] == 0);
+  }
+
+  // helpers
+  assert(_num_free_blocks() == 0);
+  assert(_num_free_bytes() == 0);
+  assert(_num_allocated_blocks() == 3 +1);
+  assert(_num_allocated_bytes() == sizeof(int) * 18 +116);
+  assert(_num_meta_data_bytes() == _size_meta_data() * (3+1));
+  printf("helpers\n");
+
+
+  // realloc
+  int *ninety = (int *) realloc(ten, sizeof(int) * 90);
+  for (int i = 0; i < 10; i++) {
+      assert(ninety[i] == 10);
+  }
+  for (int i = 0; i < 90; i++) {
+      ninety[i] = 90;
+  }
+  assert(ninety);
+  assert(_num_free_blocks() == 1);
+  assert(_num_free_bytes() == sizeof(int) * 10);
+  assert(_num_allocated_blocks() == 4+1);
+  assert(_num_allocated_bytes() == sizeof(int) * 108 +116);
+  assert(_num_meta_data_bytes() == _size_meta_data() * (4+1));
+  printf("realloc ninety\n");
+
+  int *sixty = (int *) realloc(NULL, sizeof(int) * 60);
+  assert(sixty);
+  assert(_num_free_blocks() == 1);
+  assert(_num_free_bytes() == sizeof(int) * 10);
+  assert(_num_allocated_blocks() == 5+1);
+  assert(_num_allocated_bytes() == sizeof(int) * 168+116);
+  assert(_num_meta_data_bytes() == _size_meta_data() * (5+1));
+  printf("realloc sixty\n");
+
+  // order so far: ten(freed), five, three, ninety, sixty
+  int *fifteen = (int *) realloc(five, sizeof(int) * 15);
+  assert(fifteen);
+  assert(_num_free_blocks() == 0);
+  assert(_num_free_bytes() == 0);
+  assert(_num_allocated_blocks() == 4+1);
+  printf("_num_allocated_bytes size = %d\n",_num_allocated_bytes());
+  assert(_num_allocated_bytes() == sizeof(int) * 168+116+_size_meta_data());
+  assert(_num_meta_data_bytes() == _size_meta_data() * (4+1));
+  printf("realloc fifteen\n");
+}
+
 int main() {
     printf("Hi there!\n");
     //printf("%l",(long)sizeof(allocated_meta_data));
@@ -348,6 +424,9 @@ int main() {
         case 4:
             printf("got case 4\n");
             malloc3_test_03();
+            break;
+        case 5:
+            malloc3_test_04();
             break;
         default:
             printf("Invalid definition of macro \"_TEST_NUMBER\",\nshould be: 1/2/3/4.");
