@@ -104,7 +104,7 @@ void* calloc(size_t num, size_t size)
   void* new_mem = malloc(num * size);
   if(new_mem==NULL)
     return NULL;
-  std::memset(new_mem, 0, size);
+  std::memset(new_mem, 0, num * size);
   return new_mem;
 }
 
@@ -115,12 +115,21 @@ void* realloc(void* oldp, size_t size)
   void* malloc_mem;
   size_t old_size=0;
   // find old memory and free it. so later can use it for the new mem size.
+  if(size==0 || size>100000000)
+  {
+    return NULL;
+  }
+
   if(oldp!=NULL)
   {
     while (iter != NULL)
     {
       if(iter->get_mem_pointer() == oldp)
       {
+        if(size<=iter->get_size())
+        {
+          return oldp;
+        }
         iter->set_free(true);
         break;
       }

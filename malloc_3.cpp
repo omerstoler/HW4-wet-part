@@ -162,7 +162,7 @@ void* calloc(size_t num, size_t size)
   void* new_mem = malloc(num * size);
   if(new_mem==NULL)
     return NULL;
-  std::memset(new_mem, 0, size);
+  std::memset(new_mem, 0, num*size);
   return new_mem;
 }
 
@@ -170,15 +170,51 @@ void* calloc(size_t num, size_t size)
 void* realloc(void* oldp, size_t size)
 {
   LogEntry* iter = get_heap_head();
+  void* iter_void;
+  char* iter_bytes;
+  LogEntry* temp_entry;
   void* malloc_mem;
   size_t old_size=0;
   // find old memory and free it. so later can use it for the new mem size.
+  if(size==0 || size>100000000)
+  {
+    return NULL;
+  }
+
   if(oldp!=NULL)
   {
     while (iter != NULL)
     {
       if(iter->get_mem_pointer() == oldp)
       {
+        if(size<=iter->get_size())
+        {
+          if(iter->get_size() + sizeof(LogEntry) >= align_mem(sizeof(LogEntry)+size) + align_mem(MIN_MALLOC_MEM_UNIT + sizeof(LogEntry)))
+          {
+            size_t mem_residual_size = iter->get_size() - align_mem(sizeof(LogEntry) + size); //may be more than MIN_MALLOC_...
+            iter_void = (void*) iter;
+            iter_bytes = (char*) iter_void;
+            temp_entry = (LogEntry*)(iter_bytes + align_mem(size+sizeof(LogEntry)));//temp_entry = (LogEntry*)(iter_bytes + align_mem(size+sizeof(LogEntry)));
+            LogEntry meta2(mem_residual_size,mem_residual_size,true,temp_entry+1); // Pointers arithmetic
+            std::memcpy(temp_entry, &meta2, sizeof(LogEntry));
+
+            iter->set_size(align_mem(size + sizeof(LogEntry)) - sizeof(LogEntry));
+
+            temp_entry->set_next(iter);
+            temp_entry->set_prev(iter->get_prev());
+            if(iter->get_prev()!=NULL)
+            {
+              iter->get_prev()->set_next(temp_entry);
+            }
+            iter->set_prev(temp_entry);
+            if(iter==log)
+            {
+              log = temp_entry;
+            }
+            merge_adj_log_entries(temp_entry);
+          }
+          return iter->get_mem_pointer();
+        }
         iter->set_free(true);
         break;
       }
